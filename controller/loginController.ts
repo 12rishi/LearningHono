@@ -1,10 +1,13 @@
-import type { Context } from "hono";
+import { Context } from "hono";
 import userSchema from "../services/zodSchema";
-import { z } from "zod";
+import { string, z } from "zod";
 import { db } from "../database/connection";
 import { users } from "../database/schema";
 import { eq } from "drizzle-orm";
 import { generateToken } from "../services/generateToken";
+import { dbOperationHelper } from "../services/dbOperationFunction";
+import { sendResponse } from "../services/responseFUnction";
+import type { STATUS } from "../type";
 
 type UserSchema = z.infer<typeof userSchema>;
 
@@ -66,49 +69,62 @@ export const loginController = async (c: Context) => {
     }
 
     // Check if user exists
+    // const user: { id: number | string; email: string; password: string }[] =
+    //   // await db
+    //   //   .select({ id: users.id, email: users.email, password: users.password })
+    //   //   .from(users)
+    //   //   .where(eq(users.email, email));
     const user: { id: number | string; email: string; password: string }[] =
-      await db
-        .select({ id: users.id, email: users.email, password: users.password })
-        .from(users)
-        .where(eq(users.email, email));
-    if (user.length === 0) {
-      return c.json(
-        {
-          message: "Invalid email or password",
+      await dbOperationHelper({
+        tableName: users,
+        operation: "SELECT",
+        fetchValues: {
+          id: users.id,
+          email: users.email,
+          password: users.password,
         },
-        401
-      );
+        fetchCondition: { cond1: users.email, cond2: email },
+      });
+
+    if (user.length === 0) {
+      return sendResponse(401 as STATUS.clientError, "forbidden")(c as Context);
     }
     const id = user[0] && user[0].id;
     // Verify password
 
     if (user[0] && user[0].password !== password) {
-      return c.json(
-        {
-          message: "Invalid email or password",
-        },
-        401
-      );
+      return sendResponse(
+        401 as STATUS.clientError,
+        "unauthorized"
+      )(c as Context);
     }
     const token = await generateToken({ id } as { id: string | number });
 
     // Return success response
-    return c.json(
-      {
-        message: "Login successful",
-        data: user,
-        token: token,
+    // return c.json(
+    //   {
+    //     message: "Login successful",
+    //     data: user,
+    //     token: token,
+    //   },
+    //   200
+    // );
+    const response = sendResponse(200 as STATUS.success, "successfully login", {
+      token: token,
+      data: {
+        id,
+        email: user[0]?.email,
       },
-      200
-    );
+    });
+    return response(c as Context);
   } catch (error) {
     // Handle generic errors
-    return c.json(
-      {
-        message: "Something went wrong",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      500
-    );
+    return sendResponse(
+      500 as STATUS.serverError,
+      "Something went wrong",
+      undefined,
+
+      error instanceof Error ? error.message : "Unknown error"
+    )(c as Context);
   }
 };
