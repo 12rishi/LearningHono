@@ -3,8 +3,11 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import V1Routes from "./routes/v1Route";
 import "./database/connection";
+import { createBunWebSocket } from "hono/bun";
+import type { BunRequest, Server } from "bun";
 
 const app = new Hono();
+
 app.use(
   cors({
     origin: "*",
@@ -25,11 +28,32 @@ app.onError((err, c) => {
 
 app.notFound((c) => {
   return c.json({
-    message: " dont try to access unavilable routes",
+    message: " dont try to access unavailable routes",
     status: c.status(404),
   });
 });
-export default {
+const server = Bun.serve({
   port: 5000,
-  fetch: app.fetch,
-};
+  fetch: (request, server) => {
+    if (server.upgrade(request)) {
+      return;
+    } else {
+      return app.fetch(request, server);
+    }
+  },
+  websocket: {
+    open(ws: any) {
+      if (ws.readyState) {
+        console.log("connected");
+      }
+    },
+    close(ws: any) {
+      console.log("WebSocket connection closed:", ws);
+    },
+    message(ws: any, message: any) {
+      console.log("Received WebSocket message:", message);
+    },
+  },
+});
+
+export default app;

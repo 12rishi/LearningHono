@@ -1,4 +1,4 @@
-import { Context } from "hono";
+import type { Context } from "hono";
 import userSchema from "../services/zodSchema";
 import { string, z } from "zod";
 import { db } from "../database/connection";
