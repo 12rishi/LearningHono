@@ -5,6 +5,7 @@ import V1Routes from "./routes/v1Route";
 import "./database/connection";
 import { createBunWebSocket } from "hono/bun";
 import type { BunRequest, Server } from "bun";
+import { webSocketHelper } from "./helperFunc/websocketHelper";
 
 const app = new Hono();
 
@@ -43,15 +44,13 @@ const server = Bun.serve({
   },
   websocket: {
     open(ws: any) {
-      if (ws.readyState) {
-        console.log("connected");
-      }
+      console.log("web socket connected", ws);
     },
     close(ws: any) {
       console.log("WebSocket connection closed:", ws);
     },
     message(ws: any, message: any) {
-      console.log("Received WebSocket message:", message);
+      webSocketHelper(ws, message);
     },
   },
 });
