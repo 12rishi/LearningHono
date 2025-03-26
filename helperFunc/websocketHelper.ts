@@ -21,8 +21,11 @@ export const webSocketHelper = async (ws: WebSocket, data: any) => {
 
         if (ws.readyState === 1) {
         }
-      } catch (error) {
-        console.log("error occured", error.message);
+      } catch (error: unknown) {
+        console.log(
+          "error occured",
+          error instanceof Error ? error.message : "Unknown error"
+        );
       }
       return;
 

@@ -1,7 +1,6 @@
 import { eq, type SelectedFields } from "drizzle-orm";
 import { db } from "../database/connection";
 
-
 import { STATUS } from "../type";
 
 type Operation = "SELECT" | "INSERT" | "UPDATE" | "DELETE";
@@ -34,13 +33,14 @@ export async function dbOperationHelper(params: DbOperationParams) {
         data = await db
           .select(fetchValues as SelectedFields<any, any>)
           .from(tableName)
-          .innerJoin(joinTable as any, eq(tableName.id, joinTable?.id));
+          .innerJoin(joinTable as any, eq(tableName.userId, joinTable?.id));
       } else {
         data = await db
           .select(fetchValues as SelectedFields<any, any>)
           .from(tableName)
           .where(eq(fetchCondition.cond1, fetchCondition.cond2));
       }
+      console.log("data is", data);
       return data;
 
     case "INSERT":

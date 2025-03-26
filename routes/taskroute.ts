@@ -9,8 +9,13 @@ import {
 
 const taskroute = new OpenAPIHono();
 taskroute.use(handleAuth);
+
 taskroute.post("/task", addTaskController);
-taskroute.get("/task", getTaskController);
+taskroute.get(
+  "/task",
+
+  getTaskController
+);
 taskroute.delete("/task/:id", deleteTaskController);
 taskroute.patch("/task/:id", updateTaskController);
 export default taskroute;

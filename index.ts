@@ -6,6 +6,9 @@ import "./database/connection";
 import { createBunWebSocket } from "hono/bun";
 import type { BunRequest, Server } from "bun";
 import { webSocketHelper } from "./helperFunc/websocketHelper";
+import { logger } from "hono/logger";
+import dummyRoute from "./routes/dummyRoute";
+import redisClient from "./helper/redisClient";
 
 const app = new Hono();
 
@@ -15,12 +18,14 @@ app.use(
     credentials: true,
   })
 );
+app.use(logger());
 app.use("*", secureHeaders()); //to protect from different security threat
 //moiddleware
+
 app.route("/", V1Routes);
+app.route("/", dummyRoute);
 
 app.onError((err, c) => {
-  console.dir(err);
   return c.json({
     error: err.message,
     statusCode: c.status(500),
@@ -32,6 +37,10 @@ app.notFound((c) => {
     message: " dont try to access unavailable routes",
     status: c.status(404),
   });
+});
+redisClient.connect();
+redisClient.on("connect", (data) => {
+  console.log("Redis Client connected");
 });
 const server = Bun.serve({
   port: 5000,
